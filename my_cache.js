@@ -51,18 +51,20 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 	entries = [];
     
     var _get = function(key){
-       logger.log('inside _get key = '+key);
        return entries[key];
     }
 
     var _set = function(key,val){
         //TODO : add LRU and timout logic
-       var msg = 'inside _set key = '+key+' val = '+val;
-       logger.log(msg);
-       entries[key]=val;
-       count++;
+        if(entries[key] === undefined){
+	    count++;
+	}
+	entries[key]=val;
     }
 
+    var _getCount = function(){
+       return count;
+    }
     var _setSize = function(val){
         size = val;
     }
@@ -78,8 +80,11 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
     }
 
     var _remove = function(key){
+        if(entries[key] === undefined){
+	    return;
+	}
 	delete entries[key];
-	count++;
+	count--;
     }
 
     //the only reason for using function to export is to able to set TTL 
@@ -99,6 +104,7 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
         get : _get,
 	set : _set,
 	remove : _remove,
+	getCount : _getCount,
 	getTtl : _getTtl,
 	setTtl : _setTtl,
 	getSize : _getSize,
@@ -108,4 +114,9 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
 }(MYCACHE, this));
 
+
+//Usage
+//var theCache = new MYCACHE.modules.cache.lru();
+
+//theCache.set('def','123');
 
