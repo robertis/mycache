@@ -25,10 +25,11 @@ MYCACHE.namespace = function (path) {
 
 MYCACHE.namespace('MYCACHE.modules.common.logger');
 MYCACHE.namespace('MYCACHE.modules.cache.lru');
+MYCACHE.namespace('MYCACHE.modules.util');
 
 MYCACHE.modules.common.logger = (function(){
     var logLevel = 0,
-        logPrefix = 'MYCACHE::LOGGER::';
+	logPrefix = 'MYCACHE::LOGGER::';
     var _getLevel= function(){
         return logLevel;
     }
@@ -41,17 +42,34 @@ MYCACHE.modules.common.logger = (function(){
     };
 }());
 
+
+//utilities module
+MYCACHE.modules.util = (function(){
+
+    var _getObjectSize = function(obj){
+	var jsonText = JSON.stringify(obj);
+	return jsonText.length;
+    }
+
+    return {
+        getObjectSize : _getObjectSize
+    }
+	
+}());
+
 //LRU cache impl
 MYCACHE.modules.cache.lru = (function(myCache, global){
 
     var logger = myCache.modules.common.logger;
+    var util = myCache.modules.util;
     var size = 20,
         count = 0,
 	ttl = 3600,
-	entries = [];
+	entries = {};
     
+
     var _get = function(key){
-       return entries[key];
+	return entries[key];
     }
 
     var _set = function(key,val){
@@ -63,20 +81,20 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
     }
 
     var _getCount = function(){
-       return count;
+	return count;
     }
     var _setSize = function(val){
-        size = val;
+	size = val;
     }
     var _getSize = function(){
-       return size;
+	return size;
     }
 
     var _setTtl = function(val){
-        ttl = val;
+	ttl = val;
     }
     var _getTtl = function(){
-       return ttl;
+	return ttl;
     }
 
     var _remove = function(key){
@@ -85,6 +103,10 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 	}
 	delete entries[key];
 	count--;
+    }
+
+    var _getCacheSize = function(){
+	return util.getObjectSize(entries);
     }
 
     //the only reason for using function to export is to able to set TTL 
@@ -116,7 +138,13 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
 
 //Usage
-//var theCache = new MYCACHE.modules.cache.lru();
+var theCache = new MYCACHE.modules.cache.lru();
 
-//theCache.set('def','123');
+theCache.set('def','123aa');
+theCache.set('def1','123bb');
+theCache.set('def2','123cc');
+
+console.log('def ='+theCache.get('def'));
+console.log('def1 ='+theCache.get('def1'));
+console.log('def2 ='+theCache.get('def2'));
 
