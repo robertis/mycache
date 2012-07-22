@@ -17,16 +17,16 @@ var val = newCache.get('def');
 
 console.log('val  = '+val);
 
+TTL is time to live in milliseconds and SIZE is cache size in bytes(approx).
+
 LRU algorithm :
 
 2 maps are maintained : 
-    1) entries : Key-> (Value, ts)
-    2) timeStampMap : ts -> key
-Everytime a key is accessed, both maps are updated with the new timestamp.
-During eviction, the we find the first entry in the timeStampMap and remove it.
-We also remove the entry from entries map
+    1) entries : Key-> Value
+    2) timeStampMap : Key -> ts
+Everytime a key is accessed, timeStampMap is updted to store new timeStamp.
+During eviction, the we find the entry in timeStampMap with the smallest value.
+We then remove the entries from both maps with the key.
 
-
-This kind of works , but if more than 1 elements are added around the same time,
- then multiple entries map to 1 entry in the timeStampMap, which causes the eviction to funciton incorrectly.
-
+The two maps could have been combined into 1 like Key -> (Value,ts), but keeping them separate 
+might optimize a bit by avoiding another object lookup.

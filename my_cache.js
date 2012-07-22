@@ -65,49 +65,36 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
     var size = 65000,
         count = 0,
 	ttl = 3600000,
-	timeStampMap = {} //ts -> key
-	entries = {}; //key -> value,ts
+	timeStampMap = {} //key -> ts
+	entries = {}; //key -> value
     
 
     var _get = function(key){
         var entry = entries[key];
-	if(entry === undefined){
-	    return null;
-	}
-
+	if(entry === undefined) return null;
 	if(entry != null){
 	    var currTime = new Date().getTime();
-	    var oldTimeStamp = entry.timeStamp;
+	    var oldTimeStamp = timeStampMap[key];
 	    if(currTime - oldTimeStamp > ttl){
 	        //too old, remove it...
 	        _remove(key);
 	        return null;
 	    }
-	    //update the timeStamp in all the maps
-	    entry.timeStamp = currTime;
-	    entries[key] = entry;
-	    //update timeStampMap with the new timestamp as the key
-	    delete timeStampMap[oldTimeStamp];
-	    timeStampMap[currTime] = entry.key;
+	    //update the timeStamp
+	    timeStampMap[key] = currTime;
 	}
-	return entry.value;
+	return entry;
     }
 
     var _set = function(key,val){
         //TODO : add LRU and timout logic
-
-        var item = function(val){
-	    this.value = val;
-	    this.timeStamp = new Date().getTime();
-	}
-
         if(entries[key] === undefined){
 	    count++;
 	}
-	var theItem = new item(val);
-	entries[key]=theItem;
+	entries[key]=val;
 	//add in entry in timeStampMap
-	timeStampMap[theItem.timeStamp] = key;
+	var currentTime = new Date().getTime();
+	timeStampMap[key] = currentTime;
 
 	var currCacheSize = _getCacheSize();
 	if(currCacheSize > size){
@@ -136,9 +123,7 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
         if(entries[key] === undefined){
 	    return;
 	}
-	var entry = entries[key];
-	var ts = entry.timeStamp;
-	delete timeStampMap[ts];
+	delete timeStampMap[key];
 	delete entries[key];
 	count--;
     }
@@ -149,13 +134,27 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
     var _evict = function(){
 	//find the element with the minimum key from timeStamp map and remove it from both maps
-	//Using Object.keys may be slower than it could be ??
-	var keySet = Object.keys(timeStampMap);
-	var minTimeStamp = Math.min.apply( Math, keySet );
-	var minKey = timeStampMap[minTimeStamp];
-	delete entries[minKey];
-	delete timeStampMap[minTimeStamp];
-	count--;
+	var minKey = _findElemWithMinTs();
+	if(minKey !== undefined){
+	    delete entries[minKey];
+	    delete timeStampMap[minKey];
+	    count--;
+	}
+    }
+
+    //this is kinda lame, but it works,
+    //takes O(n) time, but happens only in eviction
+    var _findElemWithMinTs = function(){
+	var minTs=Number.MAX_VALUE, 
+	    itsKey;
+	for(var i in timeStampMap){
+	    var ts = timeStampMap[i];
+	    if(ts < minTs) {
+		minTs = ts;
+		itsKey = i;
+	    }
+	}
+	return itsKey;
     }
 
     //the only reason for using function to export is to able to set TTL 
@@ -186,9 +185,10 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 }(MYCACHE, this));
 
 
-//Usage
+//Usage & Tests
 //var theCache = new MYCACHE.modules.cache.lru();
-var theCache= new MYCACHE.modules.cache.lru( { TTL:4605, SIZE:5570 } );
+/*
+var theCache= new MYCACHE.modules.cache.lru( { TTL:4605, SIZE:284 } );
 
 theCache.set('def','123aa');
 theCache.set('def1','123bb');
@@ -216,6 +216,14 @@ console.log('def8 ='+theCache.get('def8'));
 console.log('def9 ='+theCache.get('def9'));
 console.log('def16 ='+theCache.get('def16'));
 console.log('def26 ='+theCache.get('def26'));
-console.log('def36 ='+theCache.get('def36'));
+
+setTimeout(
+    function() { 
+	//generateOutput(true);  
+	console.log('def36 ='+theCache.get('def36'));
+    },  
+    4599  
+); 
+*/
 
 
