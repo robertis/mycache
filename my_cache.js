@@ -62,7 +62,7 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
     var logger = myCache.modules.common.logger;
     var util = myCache.modules.util;
-    var size = 65000,
+    var size = 65000000,
         count = 0,
 	ttl = 3600000,
 	timeStampMap = {} //key -> ts
