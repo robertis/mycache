@@ -62,22 +62,57 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
     var logger = myCache.modules.common.logger;
     var util = myCache.modules.util;
-    var size = 20,
+    var size = 65000,
         count = 0,
-	ttl = 3600,
-	entries = {};
+	ttl = 3600000,
+	timeStampMap = {} //ts -> key
+	entries = {}; //key -> value,ts
     
 
     var _get = function(key){
-	return entries[key];
+        var entry = entries[key];
+	if(entry === undefined){
+	    return null;
+	}
+
+	if(entry != null){
+	    var currTime = new Date().getTime();
+	    var oldTimeStamp = entry.timeStamp;
+	    if(currTime - oldTimeStamp > ttl){
+	        //too old, remove it...
+	        _remove(key);
+	        return null;
+	    }
+	    //update the timeStamp in all the maps
+	    entry.timeStamp = currTime;
+	    entries[key] = entry;
+	    //update timeStampMap with the new timestamp as the key
+	    delete timeStampMap[oldTimeStamp];
+	    timeStampMap[currTime] = entry.key;
+	}
+	return entry.value;
     }
 
     var _set = function(key,val){
         //TODO : add LRU and timout logic
+
+        var item = function(val){
+	    this.value = val;
+	    this.timeStamp = new Date().getTime();
+	}
+
         if(entries[key] === undefined){
 	    count++;
 	}
-	entries[key]=val;
+	var theItem = new item(val);
+	entries[key]=theItem;
+	//add in entry in timeStampMap
+	timeStampMap[theItem.timeStamp] = key;
+
+	var currCacheSize = _getCacheSize();
+	if(_getCacheSize() > size){
+	    _evict();
+	}
     }
 
     var _getCount = function(){
@@ -101,12 +136,27 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
         if(entries[key] === undefined){
 	    return;
 	}
+	var entry = entries[key];
+	var ts = entry.timeStamp;
+	delete timeStampMap[ts];
 	delete entries[key];
 	count--;
     }
 
     var _getCacheSize = function(){
 	return util.getObjectSize(entries);
+    }
+
+    var _evict = function(){
+	//find the least used key and remove it from the cache
+	//find the element with the minimum key from timeStamp map and remove it from both maps
+	//Using Object.keys may be slower than it could be ??
+	var keySet = Object.keys(timeStampMap);
+	var minTimeStamp = Math.min.apply( Math, keySet );
+	var minKey = timeStampMap[minTimeStamp];
+	delete entries[minKey];
+	delete timeStampMap[minTimeStamp];
+	count--;
     }
 
     //the only reason for using function to export is to able to set TTL 
@@ -138,13 +188,35 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 
 
 //Usage
-var theCache = new MYCACHE.modules.cache.lru();
+//var theCache = new MYCACHE.modules.cache.lru();
+var theCache= new MYCACHE.modules.cache.lru( { TTL:4605, SIZE:5570 } );
 
 theCache.set('def','123aa');
 theCache.set('def1','123bb');
 theCache.set('def2','123cc');
+theCache.set('def3','123cc1');
+theCache.set('def4','123cc2');
+theCache.set('def5','123cc3');
+theCache.set('def6','123cc4');
+theCache.set('def7','123cc5');
+theCache.set('def8','123cc6');
+theCache.set('def9','123cc7');
+theCache.set('def16','123cc8');
+theCache.set('def26','123cc9');
+theCache.set('def36','123cc10');
 
 console.log('def ='+theCache.get('def'));
 console.log('def1 ='+theCache.get('def1'));
 console.log('def2 ='+theCache.get('def2'));
+console.log('def3 ='+theCache.get('def3'));
+console.log('def4 ='+theCache.get('def4'));
+console.log('def5 ='+theCache.get('def5'));
+console.log('def6 ='+theCache.get('def6'));
+console.log('def7 ='+theCache.get('def7'));
+console.log('def8 ='+theCache.get('def8'));
+console.log('def9 ='+theCache.get('def9'));
+console.log('def16 ='+theCache.get('def16'));
+console.log('def26 ='+theCache.get('def26'));
+console.log('def36 ='+theCache.get('def36'));
+
 
