@@ -110,7 +110,7 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
 	timeStampMap[theItem.timeStamp] = key;
 
 	var currCacheSize = _getCacheSize();
-	if(_getCacheSize() > size){
+	if(currCacheSize > size){
 	    _evict();
 	}
     }
@@ -148,7 +148,6 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
     }
 
     var _evict = function(){
-	//find the least used key and remove it from the cache
 	//find the element with the minimum key from timeStamp map and remove it from both maps
 	//Using Object.keys may be slower than it could be ??
 	var keySet = Object.keys(timeStampMap);
