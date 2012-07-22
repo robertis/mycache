@@ -65,7 +65,7 @@ MYCACHE.modules.cache.lru = (function(myCache, global){
     var size = 65000000,
         count = 0,
 	ttl = 3600000,
-	timeStampMap = {} //key -> ts
+	timeStampMap = {}, //key -> ts
 	entries = {}; //key -> value
     
 
